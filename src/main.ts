@@ -6,11 +6,21 @@ const crawler = new PlaywrightCrawler({
     // proxyConfiguration: new ProxyConfiguration({ proxyUrls: ['...'] }),
     async requestHandler({ page }) {
         let titleTable = page.locator('table').filter({hasText:'Наименование избирательной комиссии'});
-        let resultsTable = page.locator('table').filter({hasText: 'Число избирателей'});
+        let resultsTable = page.locator('table').filter({ hasText: 'Число избирателей' });
+        let resultRows = await resultsTable.locator('tr').all();
+        let results = await Promise.all(resultRows.map(async (row) => {
+            let cells = await row.locator('td').all();
+            let cellTexts = cells.map(async (cell) => {
+                return await cell.innerText();
+            });
+            return await Promise.all(cellTexts);
+        }));
+
+        console.log(results);
         Dataset.pushData({
             url: page.url(),
             title: await titleTable.innerText(),
-            results: await resultsTable.innerText(),
+            results,
         })
     },
 });
